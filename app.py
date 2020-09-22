@@ -1,6 +1,6 @@
 from flask import request
 
-from models import MysteryModel, mystery_schema, mysteries_schema
+from models import MysteryModel, mystery_schema, mysteries_schema, PrayerModel, prayer_schema
 from config import app, db
 
 
@@ -14,6 +14,11 @@ def add_mystery():
     db.session.commit()
     return mystery_schema.jsonify(request.get_json)
 
+@app.route('/api/1/<endpoint>', methods=['GET'])
+def get_prayer(endpoint):
+    prayer = PrayerModel.query.filter_by(endpoint=endpoint).first()
+    result = MysteryModel.query.filter_by(prayer_id=prayer.id)
+    return mysteries_schema.jsonify(result)
 
 @app.route('/api/1', methods=['GET'])
 def get_mysteries_list():
