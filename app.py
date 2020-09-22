@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request
 
 from models import MysteryModel, mystery_schema, mysteries_schema
 from config import app, db
@@ -19,7 +19,7 @@ def add_mystery():
 def get_mysteries_list():
     all_mysteries = MysteryModel.query.all()
     result = mysteries_schema.dump(all_mysteries)
-    return jsonify(result)
+    return mysteries_schema.jsonify(result)
 
 
 @app.route('/api/1/<mystery_id>', methods=['GET'])
@@ -45,7 +45,6 @@ def delete_mystery(mystery_id):
     mystery = MysteryModel.query.get(mystery_id)
     db.session.delete(mystery)
     db.session.commit()
-
     return mystery_schema.jsonify(mystery)
 
 
