@@ -1,18 +1,10 @@
+import json
+import secrets
 from flask import request
 
-from models import MysteryModel, mystery_schema, mysteries_schema, PrayerModel, prayer_schema
+from models import MysteryModel, mystery_schema, mysteries_schema, PrayerModel
 from config import app, db
 
-
-@app.route('/api/1', methods=['POST'])
-def add_mystery():
-    data = request.get_json(force=True)
-    title = data.get('title')
-    reserved = data.get('reserved')
-    new_mystery = MysteryModel(title, reserved)
-    db.session.add(new_mystery)
-    db.session.commit()
-    return mystery_schema.jsonify(request.get_json)
 
 @app.route('/api/1/<endpoint>', methods=['GET'])
 def get_prayer(endpoint):
@@ -20,35 +12,34 @@ def get_prayer(endpoint):
     result = MysteryModel.query.filter_by(prayer_id=prayer.id)
     return mysteries_schema.jsonify(result)
 
-@app.route('/api/1', methods=['GET'])
-def get_mysteries_list():
-    all_mysteries = MysteryModel.query.all()
-    result = mysteries_schema.dump(all_mysteries)
-    return mysteries_schema.jsonify(result)
 
+@app.route('/api/1', methods=['POST'])
+def create_prayer():
+    parts = request.get_json(force=True).get('parts')
+    with open('rosary.json', 'r') as f:
+        rosary = json.load(f)
 
-@app.route('/api/1/<mystery_id>', methods=['GET'])
-def get_mystery(mystery_id):
-    mystery = MysteryModel.query.get(mystery_id)
-    return mystery_schema.jsonify(mystery)
+    endp = str(secrets.token_hex(5))
+    prayer = PrayerModel(endpoint=endp)
+    db.session.add(prayer)
+    db.session.commit()
+
+    for part in parts:
+        for m in rosary.get(part):
+            mystery = MysteryModel(title=m, prayer_id=prayer.id)
+            prayer.mysteries.append(mystery)
+            db.session.add(prayer)
+            db.session.commit()
+
+    return get_prayer(endpoint=endp)
 
 
 @app.route('/api/1/<mystery_id>', methods=['PUT'])
 def update_mystery(mystery_id):
     mystery = MysteryModel.query.get(mystery_id)
     data = request.get_json(force=True)
-    title = data.get('title')
     reserved = data.get('reserved')
-    mystery.title = title if title else mystery.title
     mystery.reserved = reserved if reserved else mystery.reserved
-    db.session.commit()
-    return mystery_schema.jsonify(mystery)
-
-
-@app.route('/api/1/<mystery_id>', methods=['DELETE'])
-def delete_mystery(mystery_id):
-    mystery = MysteryModel.query.get(mystery_id)
-    db.session.delete(mystery)
     db.session.commit()
     return mystery_schema.jsonify(mystery)
 
