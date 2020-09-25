@@ -1,5 +1,5 @@
+import datetime
 from config import db, ma
-
 
 class MysteryModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -7,15 +7,11 @@ class MysteryModel(db.Model):
     reserved = db.Column(db.Boolean, default=False)
     prayer_id = db.Column(db.Integer, db.ForeignKey('prayers.id'), nullable=False)
 
-    def __init__(self, title, prayer_id):
-        self.title = title
-        self.prayer_id = prayer_id
-
 
 class MysterySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = MysteryModel
-        fields = ['title', 'reserved']
+        fields = ['id', 'title', 'reserved']
 
 
 class PrayerModel(db.Model):
@@ -23,12 +19,17 @@ class PrayerModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     endpoint = db.Column(db.String(10))
     mysteries = db.relationship('MysteryModel', backref='prayer', lazy=True)
+    duration_days = db.Column(db.Integer, default=1)
+    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    @classmethod
+    def delete_expired(cls, timestamp, duration_days):
+
+        limit = datetime.datetime.utcnow() - datetime.timedelta(days=duration_days)
+        cls.query.filter(timestamp < limit).delete()
+        db.session.commit()
+
 
 
 mystery_schema = MysterySchema()
 mysteries_schema = MysterySchema(many=True)
-
-
-
-
-
