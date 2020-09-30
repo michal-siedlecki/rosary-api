@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div>
+    <h4>Rosary app</h4>
+    <p>
+        Utwórz różaniec i zaproś znajomych, żeby odmówili go razem z Tobą!
+    </p>
+    <form class="mt-3" action="{{ url_for('new_prayer')}}" method="post">
+        <div class="form-check m-1">
+          <input class="form-check-input" type="checkbox" value="" id="mystery1" name="radosne">
+          <label class="form-check-label" for="mystery1">
+            Tajemnice Radosne
+          </label>
+        </div>
+        <div class="form-check m-1">
+          <input class="form-check-input" type="checkbox" value="" id="mystery2" name="swiatla">
+          <label class="form-check-label" for="mystery2">
+            Tajemnice Światła
+          </label>
+        </div>
+        <div class="form-check m-1">
+          <input class="form-check-input" type="checkbox" value="" id="mystery3" name="bolesne">
+          <label class="form-check-label" for="mystery3">
+            Tajemnice Bolesne
+          </label>
+        </div>
+        <div class="form-check m-1">
+          <input class="form-check-input" type="checkbox" value="" id="mystery4" name="chwalebne">
+          <label class="form-check-label" for="mystery4">
+            Tajemnice Chwalebne
+          </label>
+        </div>
+    <div class="form-group">
+    <label for="formControlRange">Dni modlitwy: <span id="textInput">1</span></label>
+      <input class="form-control-range" value="1" id="formControlRange" type="range" name="dayRange" min="1" max="30" onchange="updateInput(this.value);" oninput="updateInput(this.value)">
+    </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+
+</div>
+<script>
+function updateInput(val) {
+    document.getElementById('textInput').innerHTML=val;
+}
+</script>
+
+{% endblock %}

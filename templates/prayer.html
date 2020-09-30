@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div>
+    <h4>Rosary app </h4>
+        <p>
+            Utwórz różaniec i zaproś znajomych, żeby odmawiali go razem z Tobą!
+        </p>
+{% for mystery in data %}
+    <div class="m-1">
+        {% if mystery['reserved'] %}
+        <a href="{{ mystery['prayer_id'] }}/{{ mystery['id'] }}/reserve" class="btn btn-primary btn-lg btn-block" role="button" aria-pressed="true">
+            {{ mystery['title'] }}
+        </a>
+        {% else %}
+        <a href="{{ mystery['prayer_id'] }}/{{ mystery['id'] }}/reserve" class="btn btn-secondary btn-lg btn-block" role="button" aria-pressed="true">
+            {{ mystery['title'] }}
+        </a>
+        {% endif %}
+
+    </div>
+{% endfor %}
+</div>
+
+
+{% endblock %}

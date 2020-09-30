@@ -4,7 +4,6 @@ import json
 
 BASE_URL = "http://127.0.0.1:5000/api/1"
 ENDPOINT = ""
-
 URL = BASE_URL + ENDPOINT
 
 data = json.dumps({
@@ -13,4 +12,5 @@ data = json.dumps({
 })
 
 requests.post(url=URL, data=data)
+
 
