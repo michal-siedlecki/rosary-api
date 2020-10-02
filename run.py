@@ -1,15 +1,13 @@
 import json
 import secrets
-import requests
-from io import StringIO
 from flask import request, redirect, abort, render_template
 
 
-from models import MysteryModel, mystery_schema, mysteries_schema, PrayerModel
+from models import MysteryModel, mysteries_schema, PrayerModel
 from config import app, db
 
-BASE_URL = 'http://127.0.0.1:5000'
 API_URL = '/api/1'
+
 
 # :::::::::::::::::: LOGIC :::::::::::::::::::::::::::::::::::
 
@@ -41,6 +39,7 @@ def create_prayer(parts, duration):
     for part in parts:
         for m in rosary.get(part):
             mystery = MysteryModel(title=m, prayer_id=prayer.id)
+            mystery.prayer_endpoint = endpoint
             prayer.mysteries.append(mystery)
             db.session.add(prayer)
             db.session.commit()
@@ -58,15 +57,18 @@ def update_mystery(prayer_endpoint, mystery_id, http_request):
     data = http_request.get_json(force=True)
     reserved = data.get('reserved')
     mystery.reserved = reserved
+    db.session.add(mystery)
     db.session.commit()
     return True
 
 
-def reserve_mystery(prayer_id, mystery_id):
-    prayer = PrayerModel.query.filter_by(id=prayer_id).first()
+def reserve_mystery(prayer_endpoint, mystery_id):
+    prayer = PrayerModel.query.filter_by(endpoint=prayer_endpoint).first()
     if prayer:
         mystery = MysteryModel.query.filter_by(id=mystery_id).first()
-        mystery.reserved = True
+        mystery.reserved = True if not mystery.reserved else False
+        db.session.add(mystery)
+        db.session.commit()
         return True
     abort(404, description="Resource not found")
 
@@ -74,12 +76,12 @@ def reserve_mystery(prayer_id, mystery_id):
 # :::::::::::::::::: FRONTEND VIEWS ::::::::::::::::::::::::::
 
 @app.route('/')
-def index():
+def views_index():
     return render_template('index.html')
 
 
-@app.route('/new-prayer', methods=['POST'])
-def new_prayer():
+@app.route('/create-prayer', methods=['POST'])
+def views_create_prayer():
     mysteries_list = ['radosne', 'bolesne', 'chwalebne', 'swiatla']
     parts = [x for x in mysteries_list if x in request.form]
     duration = request.form.get('dayRange')
@@ -88,25 +90,21 @@ def new_prayer():
 
 
 @app.route('/<endpoint>', methods=['GET'])
-def prayer_view(endpoint):
+def views_prayer(endpoint):
     mysteries = get_prayer(endpoint)
     return render_template('prayer.html', data=mysteries)
 
 
-@app.route('/<prayer_id>/<mystery_id>/reserve')
-def reserve_mystery(prayer_id, mystery_id):
-    prayer = PrayerModel.query.filter_by(id=prayer_id).first()
-    mystery = MysteryModel.query.filter_by(id=mystery_id).first()
-    data = json.dumps({"reserved": not mystery.reserved})
-    url = "/".join([BASE_URL, API_URL, prayer.endpoint, mystery_id])
-    requests.patch(url=url, data=data)
-    return redirect(BASE_URL+"/"+prayer.endpoint)
+@app.route('/<prayer_endpoint>/<mystery_id>/reserve')
+def views_reserve_mystery(prayer_endpoint, mystery_id):
+    reserve_mystery(prayer_endpoint,mystery_id)
+    return redirect(request.url_root + prayer_endpoint)
 
 
 # :::::::::::::::::: API VIEWS ::::::::::::::::::::::::::
 
 
-@app.route(API_URL+'/<endpoint>', methods=['GET'])
+@app.route(API_URL + '/<endpoint>', methods=['GET'])
 def api_get_prayer(endpoint):
     result = get_prayer(endpoint)
     return mysteries_schema.jsonify(result)
